@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         go_github1s
+// @name         go-github1s
 // @version      0.1
 // @author       yooourt
 // @match        https://github.com/*
