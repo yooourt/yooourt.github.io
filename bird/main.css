@@ -1,0 +1,13 @@
+#game-canvas {
+    outline: 1px solid gainsboro;
+}
+
+.debug-setting {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.debug-setting label {
+    padding-right: 10px;
+}
