@@ -1,0 +1,135 @@
+con ensure = function(condition, message){
+    if(condition) {
+        log('测试成功1')
+    } else {
+        log('测试失败2', message)
+    }
+}
+
+con equals = function(a, b) {
+    // 1. 如果 a 和 b 都是数组, 就参考 arrayDeepEquals 的方式来判断
+        // 1.1 如果 a.length 与 b.length 不相等, 返回 false
+        // 1.2 遍历数组 a, 用 equals 判断两个数组遍历出来的元素
+        // 1.3 如果判断出来的结果不相等, 返回 false
+        // 1.4 如果数组遍历结束都没有返回 false, 那么直接返回 true
+    // 2. 如果 a 和 b 都是字典, 就参考 mapDeepEquals 的方式来判断
+        // 2.1 如果字典 a 与 字典 b 的 key 长度不一样, 返回 false
+        // 2.2 遍历字典 a, 用 equals 判断两个字典遍历出来的值
+        // 2.3 如果判断出来的结果不相等, 返回 false
+        // 2.4 如果字典遍历结束都没有返回 false, 那么直接返回 true
+    // 3. 否则, 直接判断 a 与 b 是否相等
+
+    if (isArray(a) and isArray(b)) {
+        if (a.length() != b.length()) {
+            return false
+        }
+        for (var i = 0; i < a.length(); i += 1) {
+            if (not equals(a[i], b[i])) {
+                return false
+            }
+        }
+        return true
+    } else if (isMap(a) and isMap(b)) {
+        var aKeys = a.keys()
+        var bKyes = b.keys()
+
+        if (aKeys.length() != bKyes.length()) {
+            return false
+        }
+
+        for (var i = 0; i < aKeys.length(); i += 1) {
+            var k = aKeys[i]
+            var v1 = a[k]
+            var v2 = b[k]
+            if (not equals(v1, v2)) {
+                return false
+            }
+        }
+        return true
+    } else {
+        return a == b
+    }
+}
+
+con isMap = function(o) {
+    return type({}) == type(o)
+}
+
+con isArray = function(o) {
+    return type([]) == type(o)
+}
+
+con deepClone = function(value) {
+    // 首先判断 value 是数组还是字典还是其他普通类型
+    // 如果 value 是字典, 新建空字典 o
+    // 遍历 value 得到 k 和 v
+    // 递归调用 deepClone 函数并把 v 作为参数, 将得到的返回值添加到 o 中, 作为 k 对应的 value
+    // 遍历结束后返回 o
+    // 如果 value 是数组, 新建空数组 l
+    // 遍历 value 得到元素
+    // 递归调用 deepClone 函数并把元素作为参数, 将得到的返回值添加到 l 中
+    // 遍历结束后返回 l
+    // 如果 value 是其他类型, 直接返回 value
+    if (isArray(value)) {
+        var copy = []
+        for (var i = 0; i < value.length(); i += 1) {
+            var v = value[i]
+            var t = deepClone(v)
+            copy.add(t)
+        }
+        return copy
+    } else if (isMap(value)) {
+        var copy = {}
+        var keys = value.keys()
+        for (var i = 0; i < keys.length(); i += 1) {
+            var k = keys[i]
+            var v = value[k]
+            var t = deepClone(v)
+            copy[k] = t
+        }
+        return copy
+    } else {
+        return value
+    }
+}
+
+con testDeepClone = function() {
+    var a1 = [[1]]
+    var b1 = deepClone(a1)
+    a1[0].add(200)
+    ensure(equals(a1, [[1, 200]]) and equals(b1, [[1]]), 'test deep clone 1')
+
+    var a2 = {
+        x: 1,
+        y: {},
+    }
+    var b2 = deepClone(a2)
+    b2.y.z = 200
+    ensure(equals(a2.y, {}) and b2.y.z == 200, 'test deep clone 2')
+
+    var a3 = [
+        {
+            x: 1,
+            y: 2,
+        },
+    ]
+    var b3 = deepClone(a3)
+    a3[0].y = [2]
+    ensure(equals(a3[0].y, [2]) and equals(b3[0].y, 2), 'test deep clone 3')
+
+    var a4 = {
+        x: 1,
+        y: [2],
+    }
+    var b4 = deepClone(a4)
+    b4.y.add(200)
+    ensure(equals(a4.y, [2]) and equals(b4.y, [2, 200]), 'test deep clone 4')
+
+    var a5 = 100
+    var b5 = deepClone(a5)
+    ensure(b5 == 100, 'test deep clone 5')
+}
+
+con __main = function() {
+    testDeepClone()
+}
