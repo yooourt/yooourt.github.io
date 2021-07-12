@@ -1,0 +1,140 @@
+con ensure = function(condition, message){
+    if(condition) {
+        log('测试成功11')
+    } else {
+        log('测试失败22', message)
+    }
+}
+
+con equals = function(a, b) {
+    // 1. 如果 a 和 b 都是数组, 就参考 arrayDeepEquals 的方式来判断
+        // 1.1 如果 a.length 与 b.length 不相等, 返回 false
+        // 1.2 遍历数组 a, 用 equals 判断两个数组遍历出来的元素
+        // 1.3 如果判断出来的结果不相等, 返回 false
+        // 1.4 如果数组遍历结束都没有返回 false, 那么直接返回 true
+    // 2. 如果 a 和 b 都是字典, 就参考 mapDeepEquals 的方式来判断
+        // 2.1 如果字典 a 与 字典 b 的 key 长度不一样, 返回 false
+        // 2.2 遍历字典 a, 用 equals 判断两个字典遍历出来的值
+        // 2.3 如果判断出来的结果不相等, 返回 false
+        // 2.4 如果字典遍历结束都没有返回 false, 那么直接返回 true
+    // 3. 否则, 直接判断 a 与 b 是否相等
+
+    if (isArray(a) and isArray(b)) {
+        if (a.length() != b.length()) {
+            return false
+        }
+        for (var i = 0; i < a.length(); i += 1) {
+            if (not equals(a[i], b[i])) {
+                return false
+            }
+        }
+        return true
+    } else if (isMap(a) and isMap(b)) {
+        var aKeys = a.keys()
+        var bKyes = b.keys()
+
+        if (aKeys.length() != bKyes.length()) {
+            return false
+        }
+
+        for (var i = 0; i < aKeys.length(); i += 1) {
+            var k = aKeys[i]
+            var v1 = a[k]
+            var v2 = b[k]
+            if (not equals(v1, v2)) {
+                return false
+            }
+        }
+        return true
+    } else {
+        return a == b
+    }
+}
+
+con isMap = function(o) {
+    return type({}) == type(o)
+}
+
+con isArray = function(o) {
+    return type([]) == type(o)
+}
+
+con flat = function(array) {
+    // 把数组 array 拍平
+    // 注意, 只需要把层级减少一层
+    // 如果 array 是一维数组, 那么返回一维数组
+    // 如果 array 是二维数组, 那么返回一维数组
+    // 如果 array 是三维数组, 那么返回二维数组
+
+    // 提示
+    // 新建一个空数组 l
+    // 遍历数组 array 得到元素
+    // 如果元素是数组, 继续遍历这个元素, 并且把得到的结果添加到 l 中
+    // 如果元素不是数组, 直接把元素添加到 l 中
+    var result = []
+    for (var i = 0; i < array.length(); i += 1) {
+        var v = array[i]
+        if (isArray(v)) {
+            for (var j = 0; j < v.length(); j += 1) {
+                result.add(v[j])
+            }
+        } else {
+            result.add(v)
+        }
+    }
+    return result
+}
+
+con testFlat = function() {
+    var test1 = []
+    var test2 = [1]
+    var test3 = [1, [2]]
+    var test4 = [1, [2, [3]]]
+
+    ensure(equals(flat(test1), []), 'flat test1')
+    ensure(equals(flat(test2), [1]), 'flat test2')
+    ensure(equals(flat(test3), [1, 2]), 'flat test3')
+    ensure(equals(flat(test4), [1, 2, [3]]), 'flat test4')
+}
+
+con flatDeep = function(array) {
+    // 把数组 array 拍平
+    // 注意, 不管 array 嵌套多少层, 最终都返回一维数组
+
+    // 提示
+    // 新建一个空数组 l
+    // 遍历数组 array 得到元素
+    // 如果元素是数组, 递归调用 flatDeep 函数把元素作为参数, 并且把得到的返回值与 l 拼接在一起, 注意, 这一步需要用 concat 方法
+    // 如果元素不是数组, 直接把元素添加到 l 中
+    var result = []
+    for (var i = 0; i < array.length(); i += 1) {
+        var v = array[i]
+        if (isArray(v)) {
+            var f = flatDeep(v)
+            for (var j = 0; j < f.length(); j += 1) {
+                result.add(f[j])
+            }
+        } else {
+            result.add(v)
+        }
+    }
+    return result
+}
+
+con testFlatDeep = function() {
+    var test1 = []
+    var test2 = [1]
+    var test3 = [1, [2]]
+    var test4 = [1, [2, [3]]]
+    var test5 = [1, [2, [3, [4]]]]
+
+    ensure(equals(flatDeep(test1), []), 'flat test1')
+    ensure(equals(flatDeep(test2), [1]), 'flat test2')
+    ensure(equals(flatDeep(test3), [1, 2]), 'flat test3')
+    ensure(equals(flatDeep(test4), [1, 2, 3]), 'flat test4')
+    ensure(equals(flatDeep(test5), [1, 2, 3, 4]), 'flat test5')
+}
+con __main = function() {
+    testFlat()
+    testFlatDeep()
+}
