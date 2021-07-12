@@ -1,0 +1,139 @@
+con ensure = function(condition, message){
+    if(condition) {
+        log('测试成功1')
+    } else {
+        log('测试失败2', message)
+    }
+}
+
+con isArray = function(o) {
+    return type([]) == type(o)
+}
+
+con isMap = function(o) {
+    return type({}) == type(o)
+}
+
+// con equals = function(list1, list2) {
+//     // 第三题实现的 equal 函数
+// }
+con equals = function(a, b) {
+    // 1. 如果 a 和 b 都是数组, 就参考 arrayDeepEquals 的方式来判断
+        // 1.1 如果 a.length 与 b.length 不相等, 返回 false
+        // 1.2 遍历数组 a, 用 equals 判断两个数组遍历出来的元素
+        // 1.3 如果判断出来的结果不相等, 返回 false
+        // 1.4 如果数组遍历结束都没有返回 false, 那么直接返回 true
+    // 2. 如果 a 和 b 都是字典, 就参考 mapDeepEquals 的方式来判断
+        // 2.1 如果字典 a 与 字典 b 的 key 长度不一样, 返回 false
+        // 2.2 遍历字典 a, 用 equals 判断两个字典遍历出来的值
+        // 2.3 如果判断出来的结果不相等, 返回 false
+        // 2.4 如果字典遍历结束都没有返回 false, 那么直接返回 true
+    // 3. 否则, 直接判断 a 与 b 是否相等
+
+    if (isArray(a) and isArray(b)) {
+        if (a.length() != b.length()) {
+            return false
+        }
+        for (var i = 0; i < a.length(); i += 1) {
+            if (not equals(a[i], b[i])) {
+                return false
+            }
+        }
+        return true
+    } else if (isMap(a) and isMap(b)) {
+        var aKeys = a.keys()
+        var bKyes = b.keys()
+
+        if (aKeys.length() != bKyes.length()) {
+            return false
+        }
+
+        for (var i = 0; i < aKeys.length(); i += 1) {
+            var k = aKeys[i]
+            var v1 = a[k]
+            var v2 = b[k]
+            if (not equals(v1, v2)) {
+                return false
+            }
+        }
+        return true
+    } else {
+        return a == b
+    }
+}
+
+con arrayClone = function(array) {
+    // clone 一个数组并且返回
+    // 注意, 要求实现浅拷贝
+    var copy = []
+    for (var i = 0; i < array.length(); i += 1) {
+        copy.add(array[i])
+    }
+    return copy
+}
+
+con testArrayClone = function() {
+    var a1 = [1]
+    var b1 = arrayClone(a1)
+    ensure(equals(a1, b1), 'test array clone 1')
+
+    var a2 = [[1]]
+    var b2 = arrayClone(a2)
+    ensure(equals(a2, b2), 'test array clone 2')
+    a2[0].add(200)
+    ensure(equals(b2[0], [1, 200]), 'test array clone 3')
+
+
+    var a3 = [1, [2]]
+    var b3 = arrayClone(a3)
+    ensure(equals(a3, b3), 'test3')
+    a3[1].add(300)
+    ensure(b3[1][1] == 300, 'test4')
+}
+
+con arrayDeepClone = function(array) {
+    // clone 一个数组并且返回
+    // 注意, 要求实现深拷贝
+
+    // 新建一个空数组 l
+    // 遍历 array 得到元素
+    // 如果元素是数组, 递归调用 arrayDeepClone 函数并把元素作为参数, 将得到的返回值添加到 l 中
+    // 如果元素不是空数组, 直接把元素添加到 l 中
+    var copy = []
+
+    for (var i = 0; i < array.length(); i += 1) {
+        var v = array[i]
+        if (isArray(v)) {
+            var t = arrayDeepClone(v)
+            copy.add(t)
+        } else {
+            copy.add(v)
+        }
+    }
+
+    return copy
+
+}
+
+con testArrayDeepClone = function() {
+    var a1 = [1]
+    var b1 = arrayDeepClone(a1)
+    ensure(equals(a1, b1), 'test array deep clone 1')
+
+    var a2 = [[1]]
+    var b2 = arrayDeepClone(a2)
+    ensure(equals(a2, b2), 'test array deep clone 2')
+    a2[0].add(200)
+    ensure(equals(b2[0], [1]) and equals(a2[0], [1, 200]), 'test array deep clone 3')
+
+    var a3 = [1, [2]]
+    var b3 = arrayDeepClone(a3)
+    ensure(equals(a3, b3), 'test array deep clone 4')
+    a3[1].add(300)
+    ensure(equals(b3[1], [2]) and equals(a3[1], [2, 300]), 'test array deep clone 5')
+}
+
+con __main = function() {
+    testArrayClone()
+    testArrayDeepClone()
+}
