@@ -1,0 +1,177 @@
+con ensure = function(condition, message){
+    if(condition) {
+        log('test succeeded')
+    } else {
+        log('test failed:', message)
+    }
+}
+
+
+// isMap 函数用来判断变量 o 是不是 字典
+// 如果 o 是 字典, isMap 返回 true, 否则返回 false
+// 这个函数如果需要直接拿来用, 不需要关心里面的实现
+con isMap = function(o) {
+    return type({}) == type(o)
+}
+
+con mapEquals = function(a, b) {
+    // a.keys() 会返回 a 字典的 key 组成的数组
+    // 假设 a 是下面的字典
+    // var a = {
+    //     x: 1,
+    //     y: 2,
+    // }
+    // 那么  a.keys() 的值是 ['x', 'y']
+    // 遍历字典 a 的方式如下
+    // var keys = a.keys()
+    // for (var i = 0; i < keys.length; i+=1) {
+    //     var key = keys[i]
+    //     var value = a[key]
+    //     log('遍历字典的 key 和 value', key, value)
+    // }
+
+    // 如果 a 和 b 的 key 数量不一样多, 说明不相等
+    // 遍历字典 a, 如果 a 的 key 对应的 value 与 b 的 key 对应的 value 不相等, 说明 a 与 b 不相等
+    // 循环结束后, 都没有碰到不相等的情况, 说明 a 和 b 相等
+    var aKeys = a.keys()
+    var bkyes = b.keys()
+    if (aKeys.length() != bkyes.length()) {
+        return false
+    }
+
+    for (var i = 0; i < aKeys.length(); i += 1) {
+        var k = aKeys[i]
+        if (a[k] != b[k]) {
+            return false
+        }
+    }
+
+    return true
+}
+
+con testMapEquals = function() {
+    var a1 = {}
+    var b1 = {}
+    var a2 = {
+        x: 1,
+    }
+    var b2 = {
+        x: 1,
+    }
+    var a3 = {
+        x: 1,
+        y: 2,
+    }
+    var b3 = {
+        x: 1,
+        y: 2,
+    }
+    var a4 = {
+        x: 1,
+        y: 2,
+    }
+    var b4 = {
+        x: 1,
+        y: 3,
+    }
+    ensure(mapEquals(a1, b1), 'test object equals 1')
+    ensure(mapEquals(a2, b2), 'test object equals 2')
+    ensure(mapEquals(a3, b3), 'test object equals 3')
+    ensure(not mapEquals(a4, b4), 'test object equals 4')
+
+    log('mapEquals 测试成功')
+}
+
+con mapDeepEquals = function(a, b) {
+    // 如果 a 和 b 都是字典, 那么进入下一轮判断
+        // 如果 a 和 b 的 key 数量不一样多, 说明不相等
+        // 遍历字典 a, 如果 a 的 key 对应的 value 与 b 的 key 对应的 value 不相等, 说明 a 与 b 不相等
+        // 如果 a 的 key 对应的 value 与 b 的 key 对应的 value 是字典,
+        // 那么要递归调用 mapDeepEquals 来判断这两个 value 是否相等, 如果这两个 value 不相等, 说明 a 与 b 不相等
+        // 循环结束后, 都没有碰到不相等的情况, 说明 a 和 b 相等
+    // 否则(如果 a 和 b 不都是字典), 直接返回 a 与 b 比较的值
+
+    // 注意, 不需要考虑 a 和 b 的 key 对应的 value 是数组的情况
+
+    var aKeys = a.keys()
+    var bkyes = b.keys()
+
+    if (aKeys.length() != bkyes.length()) {
+        return false
+    }
+
+    for (var i = 0; i < aKeys.length(); i += 1) {
+        var k = aKeys[i]
+        var v1 = a[k]
+        var v2 = b[k]
+        if (isMap(v1) and isMap(v2)) {
+            if (not mapDeepEquals(v1, v2)) {
+                return false
+            }
+        } else {
+            if (v1 != v2) {
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+con testMapDeepEquals = function() {
+    var a1 = {}
+    var b1 = {}
+    var a2 = {
+        x: {}
+    }
+    var b2 = {
+        x: {}
+    }
+    var a3 = {
+        x: {
+            y: 1,
+        }
+    }
+    var b3 = {
+        x: {
+            y: 1,
+        }
+    }
+    var a4 = {
+        x: 1,
+        y: {
+            z: 2,
+        },
+    }
+    var b4 = {
+        x: 1,
+        y: {
+            z: 2,
+        },
+    }
+    var a5 = {
+        x: 1,
+        y: {
+            z: 2,
+        },
+    }
+    var b5 = {
+        x: 1,
+        y: {
+            z: 3,
+        },
+    }
+
+    ensure(mapDeepEquals(a1, b1), 'test object deep equals 1')
+    ensure(mapDeepEquals(a2, b2), 'test object deep equals 2')
+    ensure(mapDeepEquals(a3, b3), 'test object deep equals 3')
+    ensure(mapDeepEquals(a4, b4), 'test object deep equals 4')
+    ensure(not mapDeepEquals(a5, b5), 'test object deep equals 5')
+
+    log('mapDeepEquals 测试成功')
+}
+
+con __main = function() {
+    testMapEquals()
+    testMapDeepEquals()
+}
