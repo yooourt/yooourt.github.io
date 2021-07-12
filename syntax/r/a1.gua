@@ -1,0 +1,94 @@
+/*
+这里覆盖了内置的 ensure 方法
+你也可以不覆盖，看个人偏好
+*/
+con ensure = function(condition, message){
+    if(condition) {
+        log('test succeeded')
+    } else {
+        log('test failed:', message)
+    }
+}
+
+// isArray 函数用来判断变量 o 是不是 array
+// 如果 o 是数组, isArray 返回 true, 否则返回 false
+con isArray = function(o) {
+    return type([]) == type(o)
+}
+
+con arrayEquals = function(list1, list2) {
+    // 实现 arrayEquals, a 和 b 都是数组, 判断是否相等
+    if (list1.length() != list2.length()) {
+        return false
+    }
+
+    for (var i = 0; i < list1.length(); i += 1) {
+        if (list1[i] != list2[i]) {
+            return false
+        }
+    }
+
+    return true
+}
+
+con testArrayEquals = function() {
+    ensure(arrayEquals([], []), 'test array equals 1')
+    ensure(arrayEquals([1], [1]), 'test array equals 2')
+    ensure(arrayEquals([1, 2], [1, 2]), 'test array equals 3')
+    ensure(not arrayEquals([1, 2, 3], [1, 3, 2]), 'test array equals 4')
+}
+
+con arrayDeepEquals = function(list1, list2) {
+    // 实现 arrayEquals, a 和 b 都是数组, 判断是否相等
+    // a 和 b 的元素要么是普通类型, 要么是数组类型, 不会是其他类型
+
+    // 如果 a 和 b 的长度不相等, 直接返回 false
+    // 如果 a 和 b 的长度相等, 遍历数组
+    // 如果遍历出来的元素是数组类型, 那么递归调用 arrayDeepEquals, 如果返回值是 false, 那么数组不相等
+    // 如果遍历出来的元素是普通类型, 直接判断元素是否相等, 如果不相等, 说明两个数组不相等
+    // 如果遍历结束后都没有碰到不相等的情况, 说明两个数组是相等的
+
+    if (list1.length() != list2.length()) {
+        return false
+    }
+
+    for (var i = 0; i < list1.length(); i += 1) {
+        var a = list1[i]
+        var b = list2[i]
+        if (isArray(a) and isArray(b)) {
+            if (not arrayDeepEquals(a, b)) {
+                return false
+            }
+        } else {
+            if (a != b) {
+                return false
+            }
+        }
+    }
+
+    return true
+}
+
+con testArrayDeepEquals = function() {
+    var a1 = []
+    var b1 = []
+    var a2 = [[1]]
+    var b2 = [[1]]
+    var a3 = [[[1]], [[1]]]
+    var b3 = [[[1]], [[1]]]
+    var a4 = [[1, 2]]
+    var b4 = [[1, 2]]
+    var a5 = [[1, 2], [3, 4]]
+    var b5 = [[1, 2], [4, 3]]
+
+    ensure(arrayDeepEquals(a1, b1), 'test array deep equals 1')
+    ensure(arrayDeepEquals(a2, b2), 'test array deep equals 2')
+    ensure(arrayDeepEquals(a3, b3), 'test array deep equals 3')
+    ensure(arrayDeepEquals(a4, b4), 'test array deep equals 4')
+    ensure(not arrayDeepEquals(a5, b5), 'test array deep equals 5')
+}
+
+con __main = function() {
+    testArrayEquals()
+    testArrayDeepEquals()
+}
