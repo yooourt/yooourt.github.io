@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EP</title>
-
 <style>
 * {
     box-sizing: border-box;
@@ -39,6 +38,7 @@ ol {
     1. 先用 audio 播放一个声音
     2. 选择一个歌曲然后播放
     3. 播放模式
+    4. 生成列表
 -->
 <ol id="sound-list">
     <li data-sound-src="ep/a.mp3">1, a</li>
@@ -60,7 +60,19 @@ var on = function(element, selector, eventName, callback) {
     })
 }
 
+var appendHtml = (element, html) => {
+    element.insertAdjacentHTML('beforeend', html)
+}
+
+var generatePlayList = function(count) {
+    var soundSrc = `./englishpod/0001/englishpod_B0001pb.mp3`
+    appendHtml(e('#sound-list'), `
+        <li data-sound-src="${soundSrc}">${soundSrc}</li>
+    `)
+}
+
 var __main = function() {
+    generatePlayList()
     on(e('#sound-list'), 'li', 'click', function(event) {
         var target = event.target
         var player = e('#player')
