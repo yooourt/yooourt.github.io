@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EP</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+ul,
+ol {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#sound-list {
+    padding: 20px 20px;
+    height: calc(100vh - 250px);
+    overflow: auto;
+}
+
+#sound-list li {
+    height: 50px;
+}
+
+</style>
+</head>
+<body>
+<!--
+    0.
+    1. 先用 audio 播放一个声音
+    2. 选择一个歌曲然后播放
+    3. 播放模式
+-->
+<ol id="sound-list">
+    <li data-sound-src="ep/a.mp3">1, a</li>
+    <li data-sound-src="ep/b.mp3">2, b</li>
+    <li data-sound-src="ep/c.mp3">3, c</li>
+</ol>
+
+<audio id="player" controls></audio>
+
+<script>
+var e = document.querySelector.bind(document)
+
+var on = function(element, selector, eventName, callback) {
+    element.addEventListener(eventName, function(event) {
+        var target = event.target
+        if (target.matches(selector)) {
+            callback(event)
+        }
+    })
+}
+
+var __main = function() {
+    on(e('#sound-list'), 'li', 'click', function(event) {
+        var target = event.target
+        var player = e('#player')
+        player.src = target.dataset.soundSrc
+        player.oncanplay = function() {
+            player.play()
+        }
+
+    })
+}
+
+__main()
+</script>
+</body>
+</html>
