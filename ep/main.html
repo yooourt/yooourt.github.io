@@ -39,16 +39,30 @@ ol {
     2. 选择一个歌曲然后播放
     3. 播放模式
     4. 生成列表
+    5. 调用 github 查询接口，拿到列表信息
+        https://api.github.com/repos/yooourt/yooourt.github.io/git/trees/main?recursive=0
 -->
 <ol id="sound-list">
-    <li data-sound-src="ep/a.mp3">1, a</li>
-    <li data-sound-src="ep/b.mp3">2, b</li>
-    <li data-sound-src="ep/c.mp3">3, c</li>
 </ol>
 
 <audio id="player" controls></audio>
 
 <script>
+var ajax = function(request) {
+    var xhr = new XMLHttpRequest()
+    xhr.open(request.method, request.url, true)
+    if (request.contentType !== undefined) {
+        xhr.setRequestHeader('Content-Type', request.contentType)
+    }
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            request.callback(xhr.response)
+        }
+    }
+
+    xhr.send(request.data)
+}
+
 var e = document.querySelector.bind(document)
 
 var on = function(element, selector, eventName, callback) {
@@ -65,10 +79,25 @@ var appendHtml = (element, html) => {
 }
 
 var generatePlayList = function(count) {
-    var soundSrc = `./englishpod/0001/englishpod_B0001pb.mp3`
-    appendHtml(e('#sound-list'), `
-        <li data-sound-src="${soundSrc}">${soundSrc}</li>
-    `)
+    var url = 'https://api.github.com/repos/yooourt/yooourt.github.io/git/trees/main?recursive=0'
+    ajax({ method: 'GET', url: url, callback(json) {
+        var data = JSON.parse(json)
+
+        var list = data.tree
+        for(var item of list) {
+            var test  = (
+                item.path.startsWith('ep') &&
+                item.path.endsWith('.mp3') &&
+                item.type === 'blob'
+            )
+            if (test) {
+                var soundSrc = `.${item.path.slice(2)}`
+                appendHtml(e('#sound-list'), `
+                    <li data-sound-src="${soundSrc}">${soundSrc}</li>
+                `)
+            }
+        }
+    }})
 }
 
 var __main = function() {
@@ -80,7 +109,6 @@ var __main = function() {
         player.oncanplay = function() {
             player.play()
         }
-
     })
 }
 
