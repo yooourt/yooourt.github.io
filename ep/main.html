@@ -32,12 +32,12 @@ ol {
     height: 50px;
 }
 
-#sound-list li.xxxa {
-    background-color: brown;
+#sound-list li.type1 {
+    background-color: #87ceeb47;
 }
 
-#sound-list li.xxxb {
-    background-color: blue;
+#sound-list li:active {
+  background-color: yellow;
 }
 
 .player-wrapper {
@@ -144,6 +144,7 @@ let playList = function(count) {
     let files = []
     for(let item of englishpodData) {
         if (item.type == 'directory') {
+            let directory = item
             for(let dirent of item.dirents) {
                 let name = dirent.name
                 let test = (
@@ -154,7 +155,8 @@ let playList = function(count) {
                     )
                 )
                 if (test) {
-                    files.push(dirent.path)
+                    dirent.directoryName = directory.name
+                    files.push(dirent)
                 }
             }
         }
@@ -162,11 +164,23 @@ let playList = function(count) {
 
     return files
 }
+
 let generatePlayList = function() {
-    for(let path of playList()) {
-        let soundSrc = path
+    let previous
+    let classes
+    let list = playList()
+    for(let item of list) {
+        if (previous != item.directoryName) {
+            if (classes == 'type1') {
+                classes = 'type2'
+            } else {
+                classes = 'type1'
+            }
+        }
+        previous = item.directoryName
+        let soundSrc = item.path
         appendHtml(e('#sound-list'), `
-            <li class="${'classes'}" data-sound-src="${soundSrc}">${soundSrc}</li>
+            <li class="${classes}" data-sound-src="${soundSrc}">${soundSrc}</li>
         `)
     }
 }
