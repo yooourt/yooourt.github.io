@@ -21,66 +21,169 @@ ol {
 }
 
 #sound-list {
-    padding: 20px 20px;
+    padding: 10px 20px;
     height: calc(100vh - 250px);
     overflow: auto;
 }
 
 #sound-list li {
+    display: flex;
+    align-items: center;
     height: 50px;
+}
+
+#sound-list li.xxxa {
+    background-color: brown;
+}
+
+#sound-list li.xxxb {
+    background-color: blue;
+}
+
+.player-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 250px;
 }
 
 </style>
 </head>
 <body>
-<!--
-    0.
-    1. 先用 audio 播放一个声音
-    2. 选择一个歌曲然后播放
-    3. 播放模式
-    4. 生成列表
--->
 <ol id="sound-list">
-    <li data-sound-src="ep/a.mp3">1, a</li>
-    <li data-sound-src="ep/b.mp3">2, b</li>
-    <li data-sound-src="ep/c.mp3">3, c</li>
 </ol>
 
-<audio id="player" controls></audio>
+<div class="player-wrapper">
+    <audio id="player" controls></audio>
+ </div>
 
+<script type="text/javascript" src="./englishpod_data.js"></script>
 <script>
-var e = document.querySelector.bind(document)
+// 待实现的功能
+// 1. 播放模式: 单曲循环，列表循环，随机播放
+// 2. 功能按钮
+//      2.1 前进10s
+//      2.2 后退10s
+// 3. 查看 pdf
+// 4. 进度条
+// 5. 当前时间，总时间
+// 6. 暂停 开始
+// 7. loading
+// 相同的 要显示同一个颜色
+let ajax = function(option) {
+    return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest()
 
-var on = function(element, selector, eventName, callback) {
+        xhr.open(option.method, option.url, true)
+
+        if (option.contentType !== undefined) {
+            xhr.setRequestHeader('Content-Type', option.contentType)
+        }
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                resolve(xhr.response)
+            }
+        }
+
+        xhr.onerror = reject
+
+        xhr.send(option.data)
+    })
+}
+
+let e = document.querySelector.bind(document)
+
+let on = function(element, selector, eventName, callback) {
     element.addEventListener(eventName, function(event) {
-        var target = event.target
+        let target = event.target
         if (target.matches(selector)) {
             callback(event)
         }
     })
 }
 
-var appendHtml = (element, html) => {
+let appendHtml = function(element, html) {
     element.insertAdjacentHTML('beforeend', html)
 }
 
-var generatePlayList = function(count) {
-    var soundSrc = `./englishpod/0001/englishpod_B0001pb.mp3`
-    appendHtml(e('#sound-list'), `
-        <li data-sound-src="${soundSrc}">${soundSrc}</li>
-    `)
+// let generatePlayList = function(count) {
+//     let con = 0
+//     let xxx = true
+//     let url = 'https://api.github.com/repos/yooourt/yooourt.github.io/git/trees/main?recursive=0'
+//     ajax({ method: 'GET', url: url })
+//         .then(function(json) {
+//             let data = JSON.parse(json)
+
+//             let list = data.tree
+//             for(let item of list) {
+//                 let test  = (
+//                     item.path.startsWith('ep') &&
+//                     item.path.endsWith('.mp3') &&
+//                     item.type === 'blob'
+//                 )
+//                 if (test) {
+//                     let soundSrc = `.${item.path.slice(2)}`
+//                     let classes = 'xxx' + (xxx ? 'a' : 'b')
+//                     appendHtml(e('#sound-list'), `
+//                         <li class="${classes}" data-sound-src="${soundSrc}">${soundSrc}</li>
+//                     `)
+
+//                     con += 1
+//                     if (con > 2) {
+//                         con = 0
+//                         xxx = !xxx
+//                         console.log('@@ xxx', xxx)
+//                     }
+//                 }
+//             }
+//         })
+// }
+
+let playList = function(count) {
+    let files = []
+    for(let item of englishpodData) {
+        if (item.type == 'directory') {
+            for(let dirent of item.dirents) {
+                let name = dirent.name
+                let test = (
+                    dirent.type == 'file' &&
+                    (
+                        name.endsWith('.mp3') ||
+                        name.endsWith('.pdf')
+                    )
+                )
+                if (test) {
+                    files.push(dirent.path)
+                }
+            }
+        }
+    }
+
+    return files
+}
+let generatePlayList = function() {
+    for(let path of playList()) {
+        let soundSrc = path
+        appendHtml(e('#sound-list'), `
+            <li class="${'classes'}" data-sound-src="${soundSrc}">${soundSrc}</li>
+        `)
+    }
 }
 
-var __main = function() {
+
+
+let __main = function() {
     generatePlayList()
     on(e('#sound-list'), 'li', 'click', function(event) {
-        var target = event.target
-        var player = e('#player')
+        let target = event.target
+        let player = e('#player')
         player.src = target.dataset.soundSrc
         player.oncanplay = function() {
+            // 更新当前播放的音频名称
+            // e('#current-sound').innerHTML = target.dataset.soundSrc
             player.play()
         }
-
     })
 }
 
