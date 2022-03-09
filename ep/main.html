@@ -20,23 +20,37 @@ ol {
     padding: 0;
 }
 
-#sound-list {
-    padding: 10px 20px;
+.play-list-wrapper {
+    margin: 20px;
+    outline: 1px solid #ccc;
+}
+
+#play-list {
     height: calc(100vh - 250px);
     overflow: auto;
 }
 
-#sound-list li {
+#play-list li {
     display: flex;
     align-items: center;
     height: 50px;
+    padding: 0 15px;
 }
 
-#sound-list li.type1 {
-    background-color: #87ceeb47;
+#play-list .directory {
+    /* color: greenyellow; */
+    font-weight: bolder;
 }
 
-#sound-list li:active {
+#play-list .directory:not(:first-of-type) {
+    margin-top: 50px;
+}
+
+#play-list .file {
+    cursor: pointer;
+}
+
+#play-list .file:active {
   background-color: yellow;
 }
 
@@ -50,12 +64,14 @@ ol {
 </style>
 </head>
 <body>
-<ol id="sound-list">
-</ol>
+<div class="play-list-wrapper">
+    <ol id="play-list">
+    </ol>
+</div>
 
 <div class="player-wrapper">
     <audio id="player" controls></audio>
- </div>
+</div>
 
 <script type="text/javascript" src="./englishpod_data.js"></script>
 <script>
@@ -107,39 +123,6 @@ let appendHtml = function(element, html) {
     element.insertAdjacentHTML('beforeend', html)
 }
 
-// let generatePlayList = function(count) {
-//     let con = 0
-//     let xxx = true
-//     let url = 'https://api.github.com/repos/yooourt/yooourt.github.io/git/trees/main?recursive=0'
-//     ajax({ method: 'GET', url: url })
-//         .then(function(json) {
-//             let data = JSON.parse(json)
-
-//             let list = data.tree
-//             for(let item of list) {
-//                 let test  = (
-//                     item.path.startsWith('ep') &&
-//                     item.path.endsWith('.mp3') &&
-//                     item.type === 'blob'
-//                 )
-//                 if (test) {
-//                     let soundSrc = `.${item.path.slice(2)}`
-//                     let classes = 'xxx' + (xxx ? 'a' : 'b')
-//                     appendHtml(e('#sound-list'), `
-//                         <li class="${classes}" data-sound-src="${soundSrc}">${soundSrc}</li>
-//                     `)
-
-//                     con += 1
-//                     if (con > 2) {
-//                         con = 0
-//                         xxx = !xxx
-//                         console.log('@@ xxx', xxx)
-//                     }
-//                 }
-//             }
-//         })
-// }
-
 let playList = function(count) {
     let files = []
     for(let item of englishpodData) {
@@ -165,7 +148,7 @@ let playList = function(count) {
     return files
 }
 
-let generatePlayList = function() {
+let generatePlayList1 = function() {
     let previous
     let classes
     let list = playList()
@@ -179,8 +162,26 @@ let generatePlayList = function() {
         }
         previous = item.directoryName
         let soundSrc = item.path
-        appendHtml(e('#sound-list'), `
-            <li class="${classes}" data-sound-src="${soundSrc}">${soundSrc}</li>
+        appendHtml(e('#play-list'), `
+            <li class="${classes}" data-sound-src="${soundSrc}">${item.name}</li>
+        `)
+    }
+}
+
+let generatePlayList = function() {
+    let prevDirName
+    let list = playList()
+    for(let item of list) {
+        let currDirName = item.directoryName
+        if (currDirName != prevDirName) {
+            appendHtml(e('#play-list'), `
+                <li class="directory">${currDirName}</li>
+            `)
+        }
+        prevDirName = currDirName
+
+        appendHtml(e('#play-list'), `
+            <li class="file" data-sound-src="${item.path}">${item.name}</li>
         `)
     }
 }
@@ -189,7 +190,7 @@ let generatePlayList = function() {
 
 let __main = function() {
     generatePlayList()
-    on(e('#sound-list'), 'li', 'click', function(event) {
+    on(e('#play-list'), 'li', 'click', function(event) {
         let target = event.target
         let player = e('#player')
         player.src = target.dataset.soundSrc
