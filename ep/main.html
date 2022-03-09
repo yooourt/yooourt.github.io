@@ -20,13 +20,8 @@ ol {
     padding: 0;
 }
 
-.play-list-wrapper {
-    margin: 20px 0;
-    /* outline: 1px solid #ccc; */
-}
-
 #play-list {
-    /* height: calc(100vh - 40px); */
+    margin: 20px 0;
     overflow: auto;
 }
 
@@ -38,7 +33,6 @@ ol {
 }
 
 #play-list .directory {
-    /* color: greenyellow; */
     font-weight: bolder;
 }
 
@@ -72,11 +66,10 @@ ol {
     height: 4px;
     width: 50px;
     background-color: #aaa;
-    animation: borealis 0.8s linear infinite;
-    animation: borealis 0.8s linear infinite;
+    animation: loading-bar 0.8s linear infinite;
 }
 
-@keyframes borealis {
+@keyframes loading-bar {
     0% {
         left: 0%;
     }
@@ -90,23 +83,20 @@ ol {
 <body>
 <div id="loading-bar" class="hide"></div>
 
-<div class="play-list-wrapper">
-    <ol id="play-list">
-    </ol>
-</div>
+<ol id="play-list"></ol>
 
 <audio id="player" class="hide" controls></audio>
-<!-- <audio id="player"  controls></audio> -->
 
 <script type="text/javascript" src="./englishpod_data.js"></script>
 <script>
+// py -m http.server
+
 // 待实现的功能
-// 1. 播放模式: 单曲循环，列表循环，随机播放
 // 2. 功能按钮
 //      2.1 前进10s
 //      2.2 后退10s
 // 3. 查看 pdf
-// 5. 当前时间，总时间
+// 5. 当前时间, 总时间
 // 6. 暂停 开始
 let ajax = function(option) {
     return new Promise(function(resolve, reject) {
