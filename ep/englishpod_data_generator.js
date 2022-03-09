@@ -1,5 +1,4 @@
 let fs = require('fs').promises
-let path = require('path')
 
 
 let directoryList = function(dir) {

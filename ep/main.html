@@ -81,7 +81,6 @@ ol {
 </style>
 </head>
 <body>
-<embed src="./englishpod/0001/englishpod_B0001.pdf" width="500" height="375" type="application/pdf" />
 <div id="loading-bar" class="hide"></div>
 
 <ol id="play-list"></ol>
@@ -96,7 +95,6 @@ ol {
 // 2. 功能按钮
 //      2.1 前进10s
 //      2.2 后退10s
-// 3. 查看 pdf
 // 5. 当前时间, 总时间
 // 6. 暂停 开始
 let ajax = function(option) {
@@ -145,21 +143,17 @@ let playList = function(count) {
             let directory = item
             for(let dirent of item.dirents) {
                 let name = dirent.name
-                let test = (
-                    dirent.type == 'file' &&
-                    (
-                        name.endsWith('.mp3') ||
-                        name.endsWith('.pdf')
-                    )
-                )
+                let a = dirent.name.split('.')
+                let extension = a[a.length - 1]
+                let test = dirent.type == 'file' && ['mp3', 'pdf'].includes(extension)
                 if (test) {
+                    dirent.extension = extension
                     dirent.directoryName = directory.name
                     files.push(dirent)
                 }
             }
         }
     }
-
     return files
 }
 
@@ -176,9 +170,19 @@ let generatePlayList = function() {
         }
         prevDirName = currDirName
 
+        let link
+        if (item.extension == 'pdf') {
+            link = `<a href="./englishpod/0001/englishpod_B0001.pdf" target="_blank">${item.name}</a>`
+        } else {
+            link = item.name
+        }
         appendHtml(e('#play-list'), `
-            <li class="file" data-index="${i}" data-sound-src="${item.path}">
-                ${item.name}
+            <li class="file"
+                data-index="${i}"
+                data-sound-src="${item.path}"
+                data-file-extension="${item.extension}"
+            >
+                ${link}
             </li>
         `)
     }
@@ -236,7 +240,10 @@ let playAudio = function(target) {
 let bindEventSelectAudio = function() {
     on(e('#play-list'), '.file', 'click', function(event) {
         let target = event.target
-        playAudio(target)
+        let extension = target.dataset.fileExtension
+        if (extension == 'mp3') {
+            playAudio(target)
+        }
     })
 }
 
