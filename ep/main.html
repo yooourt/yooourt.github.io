@@ -26,7 +26,7 @@ ol {
 }
 
 #play-list {
-    height: calc(100vh - 40px);
+    /* height: calc(100vh - 40px); */
     overflow: auto;
 }
 
@@ -58,25 +58,45 @@ ol {
   background-color: #aaa;
 }
 
-.player-wrapper {
-    display: flex;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    height: 250px;
+#player {
+}
+
+.hide {
+    display: none
+}
+
+#loading-bar {
+    left: 0;
+    top: 0;
+    position: fixed;
+    height: 4px;
+    width: 50px;
+    background-color: #aaa;
+    animation: borealis 0.8s linear infinite;
+    animation: borealis 0.8s linear infinite;
+}
+
+@keyframes borealis {
+    0% {
+        left: 0%;
+    }
+    100% {
+        left: 100%;
+    }
 }
 
 </style>
 </head>
 <body>
+<div id="loading-bar" class="hide"></div>
+
 <div class="play-list-wrapper">
     <ol id="play-list">
     </ol>
 </div>
 
-<div class="player-wrapper">
-    <audio id="player" controls></audio>
-</div>
+<audio id="player" class="hide" controls></audio>
+<!-- <audio id="player"  controls></audio> -->
 
 <script type="text/javascript" src="./englishpod_data.js"></script>
 <script>
@@ -86,11 +106,8 @@ ol {
 //      2.1 前进10s
 //      2.2 后退10s
 // 3. 查看 pdf
-// 4. 进度条
 // 5. 当前时间，总时间
 // 6. 暂停 开始
-// 7. loading
-// 8. 相同的 要显示同一个颜色
 let ajax = function(option) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest()
@@ -114,6 +131,7 @@ let ajax = function(option) {
 }
 
 let e = document.querySelector.bind(document)
+
 let ee = document.querySelectorAll.bind(document)
 
 let on = function(element, selector, eventName, callback) {
@@ -154,30 +172,11 @@ let playList = function(count) {
     return files
 }
 
-let generatePlayList1 = function() {
-    let previous
-    let classes
-    let list = playList()
-    for(let item of list) {
-        if (previous != item.directoryName) {
-            if (classes == 'type1') {
-                classes = 'type2'
-            } else {
-                classes = 'type1'
-            }
-        }
-        previous = item.directoryName
-        let soundSrc = item.path
-        appendHtml(e('#play-list'), `
-            <li class="${classes}" data-sound-src="${soundSrc}">${item.name}</li>
-        `)
-    }
-}
-
 let generatePlayList = function() {
     let prevDirName
     let list = playList()
-    for(let item of list) {
+    for(let i = 0; i < list.length; i += 1) {
+        let item = list[i]
         let currDirName = item.directoryName
         if (currDirName != prevDirName) {
             appendHtml(e('#play-list'), `
@@ -187,7 +186,9 @@ let generatePlayList = function() {
         prevDirName = currDirName
 
         appendHtml(e('#play-list'), `
-            <li class="file" data-sound-src="${item.path}">${item.name}</li>
+            <li class="file" data-index="${i}" data-sound-src="${item.path}">
+                ${item.name}
+            </li>
         `)
     }
 }
@@ -204,24 +205,49 @@ let highlightCurrent = function(current) {
     }
 }
 
-let bindEventSelectAudio = function() {
-    let current = null
-    on(e('#play-list'), '.file', 'click', function(event) {
-        let target = event.target
-        let player = e('#player')
-        if (event.target != current) {
-            current = event.target
-            player.src = target.dataset.soundSrc
-            highlightCurrent(current)
-        }
-
-        player.oncanplay = function() {
-            player.play()
-        }
-    })
+let loadingBarHide = function() {
+    e('#loading-bar').classList.add('hide')
 }
 
+let loadingBarShow = function() {
+    e('#loading-bar').classList.remove('hide')
+}
 
+// TODO: 使用类隐藏全局变量
+let current = null
+
+let playAudio = function(target) {
+    let player = e('#player')
+
+    if (current != target) {
+        current = target
+        player.src = target.dataset.soundSrc
+        highlightCurrent(current)
+        loadingBarShow()
+    }
+
+    player.oncanplay = function() {
+        loadingBarHide()
+        player.play()
+    }
+
+    player.onended = function() {
+        let index = current.dataset.index
+        let number = Number(index)
+        let nextIndex = `[data-index="${number + 1}"]`
+        let next = e('#play-list').querySelector(nextIndex)
+        if (next) {
+            playAudio(next)
+        }
+    }
+}
+
+let bindEventSelectAudio = function() {
+    on(e('#play-list'), '.file', 'click', function(event) {
+        let target = event.target
+        playAudio(target)
+    })
+}
 
 let __main = function() {
     generatePlayList()
