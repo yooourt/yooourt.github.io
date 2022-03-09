@@ -50,8 +50,12 @@ ol {
     cursor: pointer;
 }
 
+#play-list .current-audio {
+    background-color: #ddd;
+}
+
 #play-list .file:active {
-  background-color: yellow;
+  background-color: #aaa;
 }
 
 .player-wrapper {
@@ -85,7 +89,7 @@ ol {
 // 5. 当前时间，总时间
 // 6. 暂停 开始
 // 7. loading
-// 相同的 要显示同一个颜色
+// 8. 相同的 要显示同一个颜色
 let ajax = function(option) {
     return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest()
@@ -109,6 +113,7 @@ let ajax = function(option) {
 }
 
 let e = document.querySelector.bind(document)
+let ee = document.querySelectorAll.bind(document)
 
 let on = function(element, selector, eventName, callback) {
     element.addEventListener(eventName, function(event) {
@@ -186,20 +191,40 @@ let generatePlayList = function() {
     }
 }
 
+let highlightCurrent = function(current) {
+    let elements = ee('#play-list .file').values()
+    for(let el of elements) {
+        let cls = 'current-audio'
+        if (el == current) {
+            el.classList.add(cls)
+        } else {
+            el.classList.remove(cls)
+        }
+    }
+}
+
+let bindEventSelectAudio = function() {
+    let current = null
+    on(e('#play-list'), '.file', 'click', function(event) {
+        let target = event.target
+        let player = e('#player')
+        if (event.target != current) {
+            current = event.target
+            player.src = target.dataset.soundSrc
+            highlightCurrent(current)
+        }
+
+        player.oncanplay = function() {
+            player.play()
+        }
+    })
+}
+
 
 
 let __main = function() {
     generatePlayList()
-    on(e('#play-list'), 'li', 'click', function(event) {
-        let target = event.target
-        let player = e('#player')
-        player.src = target.dataset.soundSrc
-        player.oncanplay = function() {
-            // 更新当前播放的音频名称
-            // e('#current-sound').innerHTML = target.dataset.soundSrc
-            player.play()
-        }
-    })
+    bindEventSelectAudio()
 }
 
 __main()
