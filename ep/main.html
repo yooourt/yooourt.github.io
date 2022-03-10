@@ -172,7 +172,12 @@ let generatePlayList = function() {
 
         let link
         if (item.extension == 'pdf') {
-            link = `<a href="./englishpod/0001/englishpod_B0001.pdf" target="_blank">${item.name}</a>`
+            // https://smallpdf.com/cn/edit-pdf#open=https%3A%2F%2Fyooourt.github.io%2Fep%2Fenglishpod%2F0001%2Fenglishpod_B0001.pdf
+            let filePath = 'https://yooourt.github.io/ep' + item.path.slice(1)
+            let encoded = encodeURIComponent(filePath)
+            let base = 'https://smallpdf.com/cn/edit-pdf#open='
+            let href = base + encoded
+            link = `<a href="${href}" target="_blank">${item.name}</a>`
         } else {
             link = item.name
         }
