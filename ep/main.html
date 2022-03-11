@@ -85,13 +85,13 @@ ol {
 
 <ol id="play-list"></ol>
 
-<audio id="player" class="hide" controls></audio>
+<div class="hide">
+    <audio id="player" controls></audio>
+    <button id="play-next">next</button>
+</div>
 
 <script type="text/javascript" src="./englishpod_data.js"></script>
 <script>
-// py -m http.server
-// https://smallpdf.com/cn/edit-pdf#open=https://yooourt.github.io/ep/englishpod/0001/englishpod_B0001dg.mp3
-
 // 待实现的功能
 // 2. 功能按钮
 //      2.1 前进10s
@@ -137,62 +137,80 @@ let appendHtml = function(element, html) {
     element.insertAdjacentHTML('beforeend', html)
 }
 
-let playList = function(count) {
-    let files = []
+
+let directoryList = function(count) {
+    let dirs = []
+
+    // 只保留第一层的目录文件
     for(let item of englishpodData) {
         if (item.type == 'directory') {
-            let directory = item
-            for(let dirent of item.dirents) {
-                let name = dirent.name
-                let a = dirent.name.split('.')
-                let extension = a[a.length - 1]
-                let test = dirent.type == 'file' && ['mp3', 'pdf'].includes(extension)
-                if (test) {
-                    dirent.extension = extension
-                    dirent.directoryName = directory.name
-                    files.push(dirent)
-                }
+            dirs.push(item)
+        }
+    }
+
+    // 给第二层文件加上 extension 和 directoryName 字段
+    for(let dir of dirs) {
+        for(let dirent of dir.dirents) {
+            let a = dirent.name.split('.')
+            let ext = a[a.length - 1]
+            let test = dirent.type == 'file' && ['mp3', 'pdf'].includes(ext)
+            if (test) {
+                dirent.extension = ext
+                dirent.directoryName = dir.name
             }
         }
     }
-    return files
+
+    return dirs
 }
 
-let generatePlayList = function() {
-    let prevDirName
-    let list = playList()
-    for(let i = 0; i < list.length; i += 1) {
-        let item = list[i]
-        let currDirName = item.directoryName
-        if (currDirName != prevDirName) {
+let mountFilePdf = function(file) {
+    let filePath = 'https://yooourt.github.io/ep' + file.path.slice(1)
+    let encoded = encodeURIComponent(filePath)
+    let base = 'https://smallpdf.com/cn/edit-pdf#open='
+    let href = base + encoded
+
+    appendHtml(e('#play-list'), `
+        <li class="file"
+            data-sound-src="${file.path}"
+            data-file-extension="${file.extension}"
+        >
+            <a href="${href}" target="_blank">${file.name}</a>
+        </li>
+    `)
+}
+
+let mountDirectory = function(dir) {
+    appendHtml(e('#play-list'), `
+        <li class="directory">${dir.name}</li>
+    `)
+
+    for(let i = 0; i < dir.dirents.length; i += 1) {
+        let file = dir.dirents[i]
+        let ext = file.extension
+        if (ext == 'pdf') {
+            mountFilePdf(file)
+        } else if (ext == 'mp3') {
             appendHtml(e('#play-list'), `
-                <li class="directory">${currDirName}</li>
+                <li class="file"
+                    data-sound-src="${file.path}"
+                    data-file-extension="${file.extension}"
+                >
+                    ${file.name}
+                </li>
             `)
         }
-        prevDirName = currDirName
-
-        let link
-        if (item.extension == 'pdf') {
-            // https://smallpdf.com/cn/edit-pdf#open=https%3A%2F%2Fyooourt.github.io%2Fep%2Fenglishpod%2F0001%2Fenglishpod_B0001.pdf
-            let filePath = 'https://yooourt.github.io/ep' + item.path.slice(1)
-            let encoded = encodeURIComponent(filePath)
-            let base = 'https://smallpdf.com/cn/edit-pdf#open='
-            let href = base + encoded
-            link = `<a href="${href}" target="_blank">${item.name}</a>`
-        } else {
-            link = item.name
-        }
-        appendHtml(e('#play-list'), `
-            <li class="file"
-                data-index="${i}"
-                data-sound-src="${item.path}"
-                data-file-extension="${item.extension}"
-            >
-                ${link}
-            </li>
-        `)
     }
 }
+
+let mountPlayList = function() {
+    let list = directoryList()
+    for(let i = 0; i < list.length; i += 1) {
+        let dir = list[i]
+        mountDirectory(dir)
+    }
+}
+
 
 let highlightCurrent = function(current) {
     let elements = ee('#play-list .file').values()
@@ -233,10 +251,25 @@ let playAudio = function(target) {
     }
 
     player.onended = function() {
-        let index = current.dataset.index
-        let number = Number(index)
-        let nextIndex = `[data-index="${number + 1}"]`
-        let next = e('#play-list').querySelector(nextIndex)
+        playNextAudio()
+    }
+}
+
+let playNextAudio = function() {
+    let sel = '.file[data-file-extension="mp3"]'
+    let audios = e('#play-list').querySelectorAll(sel)
+
+    let index = -1
+    for(let i = 0; i < audios.length; i += 1) {
+        let audio = audios[i]
+        if (audio == current) {
+            index = i
+            break
+        }
+    }
+
+    if (index > -1) {
+        let next = audios[index + 1]
         if (next) {
             playAudio(next)
         }
@@ -253,8 +286,15 @@ let bindEventSelectAudio = function() {
     })
 }
 
+let enableDebug = function() {
+    e('#play-next').addEventListener('click', function() {
+        playNextAudio()
+    })
+}
+
 let __main = function() {
-    generatePlayList()
+    enableDebug()
+    mountPlayList()
     bindEventSelectAudio()
 }
 
