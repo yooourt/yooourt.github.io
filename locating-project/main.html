@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圆坐标可视化系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeInGolden {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes fadeOutGolden {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        canvas {
+            cursor: move;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 h-screen p-6 flex flex-col overflow-hidden">
+    <div class="w-full max-w-full mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 flex-shrink-0">
+            <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                <span class="text-4xl">🎯</span>
+                圆坐标可视化系统
+            </h1>
+            <p class="text-blue-100 mt-2 text-sm">
+                交互式坐标系统 · 实时数据可视化 · 精准定位分析
+            </p>
+        </div>
+
+        <div class="p-8 flex flex-col flex-1 overflow-hidden min-h-0">
+            <!-- Input Section -->
+            <div class="mb-6 bg-gradient-to-r from-gray-50 to-white p-6 rounded-xl 
+                        border border-gray-200 shadow-sm flex-shrink-0">
+                <label class="block text-sm font-semibold text-gray-700 mb-3 
+                              flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" 
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" 
+                              stroke-width="2" 
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    CSV 数据输入
+                </label>
+                <textarea id="csvInput" 
+                    class="w-full min-h-[100px] px-4 py-3 border-2 border-gray-300 
+                           rounded-lg font-mono text-sm resize-vertical 
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 
+                           focus:border-transparent transition-all duration-200
+                           bg-white shadow-inner"
+                    placeholder="粘贴CSV数据...&#10;格式: Name,Diameter,Center X,Center Y"></textarea>
+                <div class="flex gap-3 mt-4">
+                    <button onclick="parseAndRender()" 
+                            class="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 
+                                   text-white font-semibold rounded-lg shadow-md 
+                                   hover:from-green-600 hover:to-emerald-700 
+                                   transform hover:scale-105 active:scale-95 
+                                   transition-all duration-200 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" 
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" 
+                                  stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                        解析并显示
+                    </button>
+                    <button onclick="loadExample()" 
+                            class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 
+                                   text-white font-semibold rounded-lg shadow-md 
+                                   hover:from-blue-600 hover:to-indigo-700 
+                                   transform hover:scale-105 active:scale-95 
+                                   transition-all duration-200 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" 
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" 
+                                  stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        加载示例
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1 min-h-0">
+                <!-- Table Section -->
+                <div class="lg:col-span-2 bg-gradient-to-br from-gray-50 to-white 
+                            rounded-xl border border-gray-200 shadow-lg overflow-hidden 
+                            flex flex-col min-h-0">
+                    <div class="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex-shrink-0">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" 
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" 
+                                      stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            数据表格
+                        </h2>
+                    </div>
+                    <div class="overflow-auto flex-1 min-h-0" id="tableContainer"></div>
+                </div>
+
+                <!-- Canvas Section -->
+                <div class="lg:col-span-3 relative bg-gradient-to-br from-gray-50 
+                            to-blue-50 rounded-xl border-2 border-gray-300 
+                            shadow-2xl overflow-hidden">
+                    <canvas id="canvas" class="w-full h-full"></canvas>
+                    
+                    <!-- Controls -->
+                    <div class="absolute top-4 right-4 bg-white/95 backdrop-blur-sm 
+                                rounded-xl shadow-xl border border-gray-200 p-3">
+                        <div class="flex flex-col gap-2">
+                            <button onclick="zoomIn()" 
+                                    class="px-4 py-2 bg-gradient-to-r from-purple-500 
+                                           to-pink-600 text-white text-sm font-semibold 
+                                           rounded-lg hover:from-purple-600 
+                                           hover:to-pink-700 shadow-md 
+                                           transform hover:scale-105 active:scale-95 
+                                           transition-all duration-200">
+                                🔍 放大
+                            </button>
+                            <button onclick="zoomOut()" 
+                                    class="px-4 py-2 bg-gradient-to-r from-orange-500 
+                                           to-red-600 text-white text-sm font-semibold 
+                                           rounded-lg hover:from-orange-600 
+                                           hover:to-red-700 shadow-md 
+                                           transform hover:scale-105 active:scale-95 
+                                           transition-all duration-200">
+                                🔍 缩小
+                            </button>
+                            <button onclick="resetView()" 
+                                    class="px-4 py-2 bg-gradient-to-r from-cyan-500 
+                                           to-blue-600 text-white text-sm font-semibold 
+                                           rounded-lg hover:from-cyan-600 
+                                           hover:to-blue-700 shadow-md 
+                                           transform hover:scale-105 active:scale-95 
+                                           transition-all duration-200">
+                                🔄 重置
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Info Panel -->
+                    <div id="info" 
+                         class="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm 
+                                px-4 py-2.5 rounded-lg shadow-xl border border-gray-200 
+                                text-sm text-gray-700 font-medium">
+                        缩放: 1.0x | 偏移: (0, 0)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let circleData = [];
+        let canvas, ctx;
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let originIndex = -1;
+        let originOffset = { x: 0, y: 0 };
+        let highlightIndex = -1;
+        let selectedIndex = -1;
+
+        window.onload = function() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            setupCanvasEvents();
+            window.addEventListener('resize', handleResize);
+        };
+
+        let resizeTimeout;
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                resizeCanvas();
+                drawCanvas();
+            }, 100);
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            ctx.scale(dpr, dpr);
+        }
+
+        function setupCanvasEvents() {
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let hasMoved = false;
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                hasMoved = false;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const dx = e.clientX - lastMouseX;
+                    const dy = e.clientY - lastMouseY;
+                    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                        hasMoved = true;
+                    }
+                    offsetX += dx;
+                    offsetY += dy;
+                    lastMouseX = e.clientX;
+                    lastMouseY = e.clientY;
+                    drawCanvas();
+                } else {
+                    checkCircleHover(e);
+                }
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (!hasMoved) {
+                    handleCanvasClick(e);
+                }
+                isDragging = false;
+                hasMoved = false;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isDragging = false;
+                if (highlightIndex !== -1) {
+                    highlightIndex = -1;
+                    updateTableHighlight();
+                    drawCanvas();
+                }
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                scale *= delta;
+                scale = Math.max(0.1, Math.min(scale, 10));
+                drawCanvas();
+            });
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n').filter(line => line.trim());
+            if (lines.length < 2) return [];
+
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length >= 4) {
+                    data.push({
+                        name: parts[0].trim(),
+                        diameter: parseFloat(parts[1]),
+                        centerX: parseFloat(parts[2]),
+                        centerY: parseFloat(parts[3]),
+                        originalX: parseFloat(parts[2]),
+                        originalY: parseFloat(parts[3])
+                    });
+                }
+            }
+            return data;
+        }
+
+        function parseAndRender() {
+            const csvText = document.getElementById('csvInput').value;
+            circleData = parseCSV(csvText);
+            
+            if (circleData.length === 0) {
+                alert('请输入有效的CSV数据！');
+                return;
+            }
+
+            originIndex = -1;
+            originOffset = { x: 0, y: 0 };
+            resetView();
+            renderTable();
+            drawCanvas();
+        }
+
+        function renderTable() {
+            const container = document.getElementById('tableContainer');
+            
+            let html = '<table class="w-full text-sm">';
+            html += '<thead class="bg-gradient-to-r from-gray-100 to-gray-50 sticky top-0 z-10">';
+            html += '<tr class="border-b-2 border-gray-300">';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">名称</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">直径</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">当前 X</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">当前 Y</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">原始 X</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">原始 Y</th>';
+            html += '<th class="px-4 py-3 text-left font-bold text-gray-700">操作</th>';
+            html += '</tr></thead><tbody>';
+
+            circleData.forEach((circle, index) => {
+                const isOrigin = index === originIndex;
+                const isSelected = index === selectedIndex;
+                const isHighlight = index === highlightIndex;
+                
+                let rowClass = 'border-b border-gray-200 transition-all duration-200 cursor-pointer ';
+                if (isSelected) {
+                    rowClass += 'bg-gradient-to-r from-green-200 to-emerald-200 hover:from-green-300 hover:to-emerald-300 shadow-md';
+                } else if (isHighlight) {
+                    rowClass += 'bg-gradient-to-r from-yellow-100 to-amber-100 hover:from-yellow-200 hover:to-amber-200 shadow-md';
+                } else {
+                    rowClass += 'hover:bg-gradient-to-r hover:from-yellow-100 hover:to-amber-100';
+                }
+                
+                html += `<tr class="${rowClass}" 
+                         onmouseenter="highlightCircle(${index})" 
+                         onmouseleave="clearHighlight()"
+                         onclick="selectCircle(${index})">`;
+                html += `<td class="px-4 py-3 font-medium text-gray-900">${circle.name}</td>`;
+                html += `<td class="px-4 py-3 text-gray-700">${circle.diameter.toFixed(4)}</td>`;
+                html += `<td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                         <button class="mr-2 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 
+                                        text-white text-xs rounded-md hover:from-blue-600 
+                                        hover:to-cyan-700 transition-all duration-200 
+                                        transform hover:scale-110 active:scale-95 
+                                        shadow-sm hover:shadow-md inline-flex items-center gap-1" 
+                                 onclick="event.stopPropagation(); copyToClipboard('${circle.centerX.toFixed(4)}')"
+                                 title="复制X坐标">
+                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                     </path>
+                                 </svg>
+                         </button>
+                         <span class="font-mono">${circle.centerX.toFixed(4)}</span>
+                         </td>`;
+                html += `<td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                         <button class="mr-2 px-2 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 
+                                        text-white text-xs rounded-md hover:from-blue-600 
+                                        hover:to-cyan-700 transition-all duration-200 
+                                        transform hover:scale-110 active:scale-95 
+                                        shadow-sm hover:shadow-md inline-flex items-center gap-1" 
+                                 onclick="event.stopPropagation(); copyToClipboard('${circle.centerY.toFixed(4)}')"
+                                 title="复制Y坐标">
+                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                     </path>
+                                 </svg>
+                         </button>
+                         <span class="font-mono">${circle.centerY.toFixed(4)}</span>
+                         </td>`;
+                html += `<td class="px-4 py-3 text-gray-600 font-mono">${circle.originalX.toFixed(4)}</td>`;
+                html += `<td class="px-4 py-3 text-gray-600 font-mono">${circle.originalY.toFixed(4)}</td>`;
+                
+                const btnClass = isOrigin 
+                    ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700' 
+                    : 'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700';
+                const btnText = isOrigin ? '✓ 原点' : '设为原点';
+                
+                html += `<td class="px-4 py-3">
+                         <button class="${btnClass} text-white px-3 py-1.5 text-xs 
+                                        font-semibold rounded-lg shadow-sm 
+                                        transform hover:scale-105 active:scale-95 
+                                        transition-all duration-200" 
+                                 onclick="event.stopPropagation(); setOrigin(${index})">
+                         ${btnText}
+                         </button></td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function setOrigin(index) {
+            if (originIndex === index) {
+                originIndex = -1;
+                originOffset = { x: 0, y: 0 };
+                circleData.forEach(circle => {
+                    circle.centerX = circle.originalX;
+                    circle.centerY = circle.originalY;
+                });
+            } else {
+                originIndex = index;
+                const origin = circleData[index];
+                originOffset.x = origin.originalX;
+                originOffset.y = origin.originalY;
+                
+                circleData.forEach(circle => {
+                    circle.centerX = circle.originalX - originOffset.x;
+                    circle.centerY = circle.originalY - originOffset.y;
+                });
+            }
+            
+            renderTable();
+            drawCanvas();
+        }
+
+        function drawCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.translate(
+                (canvas.width / dpr) / 2 + offsetX, 
+                (canvas.height / dpr) / 2 + offsetY
+            );
+            ctx.scale(scale, scale);
+
+            drawGrid();
+            drawAxes();
+            drawCircles();
+
+            ctx.restore();
+            updateInfo();
+        }
+
+        function drawGrid() {
+            const dpr = window.devicePixelRatio || 1;
+            ctx.strokeStyle = '#e5e7eb';
+            const viewWidth = canvas.width / dpr;
+            const viewHeight = canvas.height / dpr;
+            const effectiveScale = scale;
+            ctx.lineWidth = 1 / effectiveScale;
+            
+            const gridSize = 50;
+            const startX = Math.floor(-viewWidth / (2 * effectiveScale)) - 100;
+            const endX = Math.ceil(viewWidth / (2 * effectiveScale)) + 100;
+            const startY = Math.floor(-viewHeight / (2 * effectiveScale)) - 100;
+            const endY = Math.ceil(viewHeight / (2 * effectiveScale)) + 100;
+
+            for (let x = Math.floor(startX / gridSize) * gridSize; 
+                 x <= endX; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, startY);
+                ctx.lineTo(x, endY);
+                ctx.stroke();
+            }
+
+            for (let y = Math.floor(startY / gridSize) * gridSize; 
+                 y <= endY; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawAxes() {
+            const dpr = window.devicePixelRatio || 1;
+            const viewWidth = canvas.width / dpr;
+            const viewHeight = canvas.height / dpr;
+            
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 2 / scale;
+
+            ctx.beginPath();
+            ctx.moveTo(-viewWidth / scale, 0);
+            ctx.lineTo(viewWidth / scale, 0);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(0, -viewHeight / scale);
+            ctx.lineTo(0, viewHeight / scale);
+            ctx.stroke();
+
+            ctx.fillStyle = '#374151';
+            ctx.font = `${12 / scale}px Arial`;
+            ctx.fillText('X', viewWidth / (2 * scale) - 20, -10 / scale);
+            ctx.fillText('Y', 10 / scale, -viewHeight / (2 * scale) + 20);
+        }
+
+        function drawCircles() {
+            circleData.forEach((circle, index) => {
+                const isOrigin = index === originIndex;
+                const isSelected = index === selectedIndex;
+                const isHighlight = index === highlightIndex;
+                
+                ctx.beginPath();
+                ctx.arc(circle.centerX, -circle.centerY, 
+                       circle.diameter / 2, 0, Math.PI * 2);
+                
+                if (isSelected) {
+                    ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
+                    ctx.strokeStyle = '#4CAF50';
+                    ctx.lineWidth = 4 / scale;
+                } else if (isHighlight) {
+                    ctx.fillStyle = 'rgba(255, 193, 7, 0.5)';
+                    ctx.strokeStyle = '#FFC107';
+                    ctx.lineWidth = 4 / scale;
+                } else if (isOrigin) {
+                    ctx.fillStyle = 'rgba(255, 87, 34, 0.3)';
+                    ctx.strokeStyle = '#FF5722';
+                    ctx.lineWidth = 3 / scale;
+                } else {
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+                    ctx.strokeStyle = '#3B82F6';
+                    ctx.lineWidth = 2 / scale;
+                }
+                
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = isSelected ? '#4CAF50' :
+                               (isHighlight ? '#FFC107' : 
+                               (isOrigin ? '#FF5722' : '#1F2937'));
+                ctx.font = `${10 / scale}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(
+                    `(${circle.centerX.toFixed(1)}, ${circle.centerY.toFixed(1)})`,
+                    circle.centerX, 
+                    -circle.centerY - circle.diameter / 2 - 5 / scale
+                );
+            });
+        }
+
+        function zoomIn() {
+            scale *= 1.2;
+            scale = Math.min(scale, 10);
+            drawCanvas();
+        }
+
+        function zoomOut() {
+            scale *= 0.8;
+            scale = Math.max(scale, 0.1);
+            drawCanvas();
+        }
+
+        function resetView() {
+            scale = 1;
+            offsetX = 0;
+            offsetY = 0;
+            handleResize();
+        }
+
+        function updateInfo() {
+            document.getElementById('info').textContent = 
+                `缩放: ${scale.toFixed(2)}x | 偏移: (${offsetX.toFixed(0)}, ${offsetY.toFixed(0)})`;
+        }
+
+        function highlightCircle(index) {
+            if (highlightIndex !== index) {
+                highlightIndex = index;
+                drawCanvas();
+            }
+        }
+
+        function clearHighlight() {
+            if (highlightIndex !== -1) {
+                highlightIndex = -1;
+                drawCanvas();
+            }
+        }
+
+        function checkCircleHover(e) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const viewWidth = canvas.width / dpr;
+            const viewHeight = canvas.height / dpr;
+            
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const worldX = (mouseX - viewWidth / 2 - offsetX) / scale;
+            const worldY = -(mouseY - viewHeight / 2 - offsetY) / scale;
+            
+            let foundIndex = -1;
+            
+            for (let i = 0; i < circleData.length; i++) {
+                const circle = circleData[i];
+                const dx = worldX - circle.centerX;
+                const dy = worldY - circle.centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance <= circle.diameter / 2) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            
+            if (foundIndex !== highlightIndex) {
+                highlightIndex = foundIndex;
+                updateTableHighlight();
+                drawCanvas();
+            }
+        }
+
+        function updateTableHighlight() {
+            const rows = document.querySelectorAll('#tableContainer tbody tr');
+            rows.forEach((row, index) => {
+                row.className = 'border-b border-gray-200 transition-all duration-200 cursor-pointer ';
+                
+                if (index === selectedIndex) {
+                    row.className += 'bg-gradient-to-r from-green-200 to-emerald-200 hover:from-green-300 hover:to-emerald-300 shadow-md';
+                } else if (index === highlightIndex) {
+                    row.className += 'bg-gradient-to-r from-yellow-100 to-amber-100 hover:from-yellow-200 hover:to-amber-200 shadow-md';
+                } else {
+                    row.className += 'hover:bg-gradient-to-r hover:from-yellow-100 hover:to-amber-100';
+                }
+            });
+        }
+
+        function selectCircle(index) {
+            if (selectedIndex === index) {
+                selectedIndex = -1;
+            } else {
+                selectedIndex = index;
+            }
+            updateTableHighlight();
+            drawCanvas();
+        }
+
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            const viewWidth = canvas.width / dpr;
+            const viewHeight = canvas.height / dpr;
+            
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const worldX = (mouseX - viewWidth / 2 - offsetX) / scale;
+            const worldY = -(mouseY - viewHeight / 2 - offsetY) / scale;
+            
+            let foundIndex = -1;
+            
+            for (let i = 0; i < circleData.length; i++) {
+                const circle = circleData[i];
+                const dx = worldX - circle.centerX;
+                const dy = worldY - circle.centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance <= circle.diameter / 2) {
+                    foundIndex = i;
+                    break;
+                }
+            }
+            
+            if (foundIndex !== -1) {
+                if (selectedIndex === foundIndex) {
+                    selectedIndex = -1;
+                } else {
+                    selectedIndex = foundIndex;
+                }
+            } else {
+                selectedIndex = -1;
+            }
+            
+            updateTableHighlight();
+            drawCanvas();
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopyFeedback();
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showCopyFeedback();
+            } catch (err) {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showCopyFeedback() {
+            const feedback = document.createElement('div');
+            feedback.textContent = '✓ 已复制';
+            feedback.className = 'fixed left-1/2 -translate-x-1/2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 font-semibold text-base flex items-center gap-2';
+            feedback.style.top = '10%';
+            feedback.style.transform = 'translate(-50%, -50%)';
+            feedback.style.animation = 'fadeInGolden 0.3s ease-out';
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.style.animation = 'fadeOutGolden 0.3s ease-in';
+                setTimeout(() => {
+                    document.body.removeChild(feedback);
+                }, 300);
+            }, 1500);
+        }
+
+        function loadExample() {
+            const exampleCSV = `Name,Diameter,Center X,Center Y
+Circle,20.0000,2470.4474,1680.9279
+Circle,20.0000,2489.4974,1687.9279
+Circle,20.0000,2456.1974,1650.8779
+Circle,20.0000,2451.3974,1669.9279
+Circle,20.0000,2475.2474,1661.8779
+Circle,20.0000,2543.4474,1618.9279
+Circle,5.0000,2418.2034,1618.9279
+Circle,20.0000,2494.2974,1668.8779
+Circle,20.0000,2519.8350,1684.5682
+Circle,20.0000,2337.3116,1675.2237
+Circle,20.0000,2371.9041,1692.0276
+Circle,20.0000,2307.8116,1675.2237
+Circle,20.0000,2365.9595,1668.1848
+Circle,20.0000,2443.1996,1601.7057
+Circle,20.0000,2433.1850,1654.5182
+Circle,20.0000,2392.1005,1654.5138
+Circle,20.0000,2393.2073,1588.9626`;
+            
+            document.getElementById('csvInput').value = exampleCSV;
+            parseAndRender();
+        }
+    </script>
+</body>
+</html>

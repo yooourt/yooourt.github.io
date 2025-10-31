@@ -2,4 +2,4 @@
 
 [EP](https://yooourt.github.io/ep/main.html)
 
-[test](https://yooourt.github.io/ep/test.html)
+[Locating project](https://yooourt.github.io/locating-project/main.html)
